@@ -204,4 +204,4 @@ repl-temp-*
 
 # pijul
 .pijul
-.pijulignore
+.ignore
