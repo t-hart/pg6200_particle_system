@@ -1,5 +1,5 @@
 import * as three from 'three'
-import { OrbitControls } from 'three-orbitcontrols-ts'
+import { OrbitControls } from './orbitControls'
 import { OBJLoader } from 'three-obj-mtl-loader'
 
 //models
