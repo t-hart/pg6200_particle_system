@@ -30,14 +30,16 @@ const initRenderer = (width: number, height: number) => (canvas: HTMLCanvasEleme
   return renderer
 }
 
+const perspectiveCamera = (width: number, height: number) => new three.PerspectiveCamera(50, width / height, 1, 5000)
+
 const initCamera = (width: number, height: number) => {
-  const camera = new three.PerspectiveCamera(50, width / height, 1, 5000)
-  camera.position.z = 2000
+  const camera = perspectiveCamera(width, height)
+  camera.position.z = 500
   return camera
 }
 
 const initDirectionalLight = () => {
-  const directional = new three.DirectionalLight(0xffffff, .8)
+  const directional = new three.DirectionalLight(0xffffff)
   directional.position.set(10, 10, 10)
   directional.castShadow = true
   directional.shadow.mapSize.width = 1024
@@ -46,9 +48,24 @@ const initDirectionalLight = () => {
   return directional
 }
 
-const initAmbientLight = () => new three.AmbientLight(0xcccccc, 0.2)
+const initAmbientLight = () => new three.AmbientLight(0xcccccc, 0.8)
 
 const initScene = () => new three.Scene()
+
+const addResizeListener = (renderer: three.Renderer, camera: three.Camera) => {
+  window.onresize = ({ target }) => {
+    const { innerWidth, innerHeight } = target
+    console.log(camera.aspect)
+    camera.aspect = innerWidth / innerHeight
+    console.log(camera.aspect)
+    camera.updateProjectionMatrix()
+    renderer.setSize(innerWidth, innerHeight)
+  }
+}
+
+const animate = (renderer: three.Renderer, scene: three.Scene, camera: three.Camera) => {
+  renderer.render(scene, camera)
+}
 
 export const init = (width: number, height: number) => (canvas: HTMLCanvasElement) => {
   // initialization
@@ -57,6 +74,8 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   const camera = initCamera(width, height)
   const directionalLight = initDirectionalLight()
   const ambientLight = initAmbientLight()
+
+  addResizeListener(renderer, camera)
 
   scene.add(ambientLight)
   scene.add(directionalLight)
@@ -71,7 +90,6 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   mtlLoader.load(maleMtl, (materials) => {
     materials.preload()
     objLoader.setMaterials(materials)
-    // objLoader.load(male, function(obj) {
     objLoader.load(male, obj => {
       obj.traverse(child => {
         if (child.isMesh) {
