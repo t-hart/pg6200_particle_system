@@ -1,11 +1,9 @@
 import * as three from 'three'
 import { OrbitControls } from './orbitControls'
-import { OBJLoader, MTLLoader } from 'three-obj-mtl-loader'
 
-//models
-import male from 'assets/obj/male02/male02.obj'
-import maleMtl from 'assets/obj/male02/male02.mtl'
-import uvTexture from 'assets/textures/UV_Grid_Sm.jpg'
+import * as maleModel from './maleModel'
+import * as pointCloud from './pointCloud'
+
 
 const initControls = (renderer: three.WebGLRenderer) => (camera: three.PerspectiveCamera) => {
   const controls = new OrbitControls(camera, renderer.domElement)
@@ -55,16 +53,10 @@ const initScene = () => new three.Scene()
 const addResizeListener = (renderer: three.Renderer, camera: three.Camera) => {
   window.onresize = ({ target }) => {
     const { innerWidth, innerHeight } = target
-    console.log(camera.aspect)
     camera.aspect = innerWidth / innerHeight
-    console.log(camera.aspect)
     camera.updateProjectionMatrix()
     renderer.setSize(innerWidth, innerHeight)
   }
-}
-
-const animate = (renderer: three.Renderer, scene: three.Scene, camera: three.Camera) => {
-  renderer.render(scene, camera)
 }
 
 export const init = (width: number, height: number) => (canvas: HTMLCanvasElement) => {
@@ -75,36 +67,29 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   const directionalLight = initDirectionalLight()
   const ambientLight = initAmbientLight()
 
+  // resize listening
   addResizeListener(renderer, camera)
 
+
+  // lighting
   scene.add(ambientLight)
   scene.add(directionalLight)
+
+  // controls
   initControls(renderer)(camera)
 
-  const objLoader = new OBJLoader()
-  const mtlLoader = new MTLLoader()
-  const textureLoader = new three.TextureLoader()
+  //models
+  maleModel.create().then(x => scene.add(x))
+  // scene.add(maleModel.create())
 
-  const texture = textureLoader.load(uvTexture)
+  const { material, points } = pointCloud.create(10000)
+  scene.add(points)
 
-  mtlLoader.load(maleMtl, (materials) => {
-    materials.preload()
-    objLoader.setMaterials(materials)
-    objLoader.load(male, obj => {
-      obj.traverse(child => {
-        if (child.isMesh) {
-          child.material.map = texture
-        }
-      })
-      scene.add(obj)
-    },
-      xhr => console.log(`${xhr.loaded / xhr.total * 100}% loaded`),
-      e => console.log('Encountered an error while loading the model:', e)
-    )
-  })
 
   const animate = () => {
     requestAnimationFrame(animate)
+    const h = (360 * (1 + Date.now() * 0.00005) % 360) / 360
+    material.color.setHSL(h, .5, .5)
     renderer.render(scene, camera)
   }
   animate()
