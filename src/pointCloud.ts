@@ -1,8 +1,14 @@
 import * as three from 'three'
-import { createPoints3D } from './utils'
+import { createPoints3D, range } from './utils'
 
 //models
 import tex from 'assets/textures/sprites/disc.png'
+
+const velocityVec = () => ({
+  x: Math.random() * 2 - 1,
+  y: -(Math.random() + .5),
+  z: Math.random() * 2 - 1
+})
 
 export const create = (n: number) => {
   const points = createPoints3D(n)
@@ -27,5 +33,6 @@ export const create = (n: number) => {
 
   const particles = new three.Points(geometry, material)
 
-  return { material, points: particles }
+  const velocity = velocityVec()
+  return { material, points: particles, velocity }
 }
