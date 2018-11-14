@@ -83,10 +83,10 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   maleModel.create().then(x => scene.add(x))
   // scene.add(maleModel.create())
 
-  const numPoints = 10000
-  const { material, points, velocity } = pointCloud.create(numPoints)
+  const numPoints = 1000
+  const { material, points, velocity, geometry, velocities } = pointCloud.create(numPoints)
   scene.add(points)
-  const addPoints = vec.addWithin({ x: 1000, y: 1000, z: 1000 })
+  const updatePoints = pointCloud.update(geometry, velocities)
 
   const animate = (now) => {
     const time = now * .00001
@@ -94,7 +94,9 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
     const h = (360 * (1 + time * 5) % 360) / 360
     material.color.setHSL(h, .5, .5)
 
-    vec.assignVectorThree(points.position, addPoints(points.position, vec.scale(time)(velocity)))
+    updatePoints(time)
+
+    // vec.assignVectorThree(points.position, addPoints(points.position, vec.scale(time)(velocity)))
 
     renderer.render(scene, camera)
   }
