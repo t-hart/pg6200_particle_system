@@ -1,9 +1,17 @@
 import * as three from 'three'
-import { createPoints3D, range, zip } from './utils'
+import { range, zip } from './utils'
 import * as vec from './vector3'
 
 //models
-import tex from 'assets/textures/sprites/disc.png'
+import disc from 'assets/textures/sprites/disc.png'
+
+import snow1 from 'assets/textures/sprites/snowflake1.png'
+import snow2 from 'assets/textures/sprites/snowflake2.png'
+import snow3 from 'assets/textures/sprites/snowflake3.png'
+import snow4 from 'assets/textures/sprites/snowflake4.png'
+import snow5 from 'assets/textures/sprites/snowflake5.png'
+
+const textureLoader = new three.TextureLoader()
 
 const velocityVec = () => ({
   x: Math.random() * 2 - 1,
@@ -11,26 +19,16 @@ const velocityVec = () => ({
   z: Math.random() * 2 - 1
 })
 
-export const create = (n: number) => {
+const createPoints3D = (n: number) => range({ n: n * 3 }).map(_ => 2000 * Math.random() - 1000)
+
+const cloud = (n: number) => (material: three.PointsMaterial) => (h: number, s: number, l: number) => {
   const vertices = createPoints3D(n)
 
   const geometry = new three.BufferGeometry()
 
-  const textureLoader = new three.TextureLoader()
-
-  const sprite = textureLoader.load(tex)
-
   geometry.addAttribute('position', new three.Float32BufferAttribute(vertices, 3))
 
-  const material = new three.PointsMaterial({
-    size: 35,
-    sizeAttenuation: false,
-    map: sprite,
-    alphaTest: 0.5,
-    transparent: true
-  })
-
-  material.color.setHSL(1, .3, .7)
+  material.color.setHSL(h, s, l)
 
   const points = new three.Points(geometry, material)
 
@@ -38,6 +36,31 @@ export const create = (n: number) => {
   const velocity = velocityVec()
   return { material, points, velocity, geometry, velocities }
 }
+
+export const snow = (n: number) => [
+  [snow1, [1, .2, .5], 17],
+  [snow2, [.95, .1, .5], 19],
+  [snow3, [.9, .05, .5], 23],
+  [snow4, [.85, 0, .5], 29],
+  [snow5, [.8, 0, .5], 31]
+].map(([tex, hsl, size]) => cloud(n / 5)(new three.PointsMaterial({
+  size,
+  sizeAttenuation: true,
+  blending: three.AdditiveBlending,
+  depthTest: false,
+  map: textureLoader.load(tex),
+  alphaTest: 0.5,
+  transparent: true
+}))(...hsl)
+)
+
+export const create = (n: number) => cloud(n)(new three.PointsMaterial({
+  size: 35,
+  sizeAttenuation: true,
+  map: textureLoader.load(disc),
+  alphaTest: 0.5,
+  transparent: true
+}))(1, .3, .7)
 
 export const update = (geometry: three.BufferGeometry, velocities: vec.t[]) => (time: number) => {
   const posArr = geometry.getAttribute('position')
@@ -48,7 +71,10 @@ export const update = (geometry: three.BufferGeometry, velocities: vec.t[]) => (
       z: posArr.getZ(i),
     }
 
-    const { x, y, z } = vec.addWithin({ x: 1000, y: 1000, z: 1000 })(pos, vec.scale(time)(v), { x: 6, y: -5, z: 1 })
+    const { x, y, z } = vec.addWithin({ x: 1000, y: 1000, z: 1000 })
+      (pos,
+      vec.scale(time)(v),
+      { x: 1, y: 0, z: 0 })
     geometry.getAttribute('position').setXYZ(i, x, y, z)
   })
   geometry.attributes.position.needsUpdate = true;
