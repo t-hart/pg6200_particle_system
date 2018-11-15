@@ -14,9 +14,9 @@ import snow5 from 'assets/textures/sprites/snowflake5.png'
 const textureLoader = new three.TextureLoader()
 
 const velocityVec = () => ({
-  x: Math.random() * 2 - 1,
-  y: -(Math.random() + .5),
-  z: Math.random() * 2 - 1
+  x: Math.random() - .5,
+  y: 0,
+  z: Math.random() - .5
 })
 
 const createPoints3D = (n: number) => range({ n: n * 3 }).map(_ => 2000 * Math.random() - 1000)
@@ -45,18 +45,16 @@ export const snow = (n: number) => [
   [snow5, [.8, 0, .5], 31]
 ].map(([tex, hsl, size]) => cloud(n / 5)(new three.PointsMaterial({
   size,
-  sizeAttenuation: true,
   blending: three.AdditiveBlending,
   depthTest: false,
   map: textureLoader.load(tex),
   alphaTest: 0.5,
   transparent: true
-}))(...hsl)
+}))(1, 1, 1)
 )
 
 export const create = (n: number) => cloud(n)(new three.PointsMaterial({
   size: 35,
-  sizeAttenuation: true,
   map: textureLoader.load(disc),
   alphaTest: 0.5,
   transparent: true
@@ -71,11 +69,13 @@ export const update = (geometry: three.BufferGeometry, velocities: vec.t[]) => (
       z: posArr.getZ(i),
     }
 
+    const outsideForces = { x: 0, y: -.5, z: 0 }
+    const velocity = vec.scale(time)(vec.add(v, outsideForces))
     const { x, y, z } = vec.addWithin({ x: 1000, y: 1000, z: 1000 })
-      (pos,
-      vec.scale(time)(v),
-      { x: 1, y: 0, z: 0 })
+      (pos, velocity)
+
     geometry.getAttribute('position').setXYZ(i, x, y, z)
+
   })
   geometry.attributes.position.needsUpdate = true;
 }

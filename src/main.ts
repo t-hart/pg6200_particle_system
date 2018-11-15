@@ -82,10 +82,13 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   //models
   maleModel.create().then(x => scene.add(x))
 
-  const numPoints = 10000
+  const numPoints = 2000
 
   const snow = pointCloud.snow(numPoints)
   snow.forEach(({ points }) => scene.add(points))
+
+  const gravity = { x: 0, y: -9.81, z: 0 }
+  const winds = { x: 50, y: 0, z: 5 }
 
   const animate = (now: number) => {
     const time = now * .00001
