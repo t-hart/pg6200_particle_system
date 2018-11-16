@@ -1,6 +1,8 @@
 import * as three from 'three'
 import { range, zip } from './utils'
 import * as vec from './vector3'
+import fresnel from './shaders/fresnel'
+import gammon from './shaders/gammon'
 
 //models
 import disc from 'assets/textures/sprites/disc.png'
@@ -18,6 +20,8 @@ const velocityVec = () => ({
   y: 0,
   z: Math.random() - .5
 })
+
+const gammonMtl = new three.ShaderMaterial(gammon);
 
 const createPoints3D = (n: number) => range({ n: n * 3 }).map(_ => 2000 * Math.random() - 1000)
 
@@ -50,7 +54,7 @@ export const snow = (n: number) => [
   map: textureLoader.load(tex),
   alphaTest: 0.5,
   transparent: true
-}))(1, 1, 1)
+}))(...hsl)
 )
 
 export const create = (n: number) => cloud(n)(new three.PointsMaterial({
