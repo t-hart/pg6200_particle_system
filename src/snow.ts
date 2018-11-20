@@ -48,6 +48,7 @@ export const make = (dimensions: vec.t) => (n: number) => [
   [snow5, 2.3]
 ].map(([tex, size]) => cloud(dimensions)(n / 5)(new three.PointsMaterial({
   size,
+  depthWrite: false,
   blending: three.AdditiveBlending,
   map: textureLoader.load(tex),
   transparent: true,
