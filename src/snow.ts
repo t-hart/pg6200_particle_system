@@ -36,16 +36,16 @@ const cloud = (dimensions: vec.t) => (n: number) => (material: three.PointsMater
 
   const points = new three.Points(geometry, material)
 
-  const snowflakes = range({ n }).map(_ => snowflake.create(.5))
+  const snowflakes = range({ n }).map(_ => snowflake.create(1))
   return { points, geometry, snowflakes }
 }
 
 export const make = (dimensions: vec.t) => (n: number) => [
   [snow1, 2.55],
-  [snow2, 3],
-  [snow3, 1.5],
-  [snow4, 2.33],
-  [snow5, 2]
+  [snow2, 2],
+  [snow3, 2],
+  [snow4, .5],
+  [snow5, 2.3]
 ].map(([tex, size]) => cloud(dimensions)(n / 5)(new three.PointsMaterial({
   size,
   blending: three.AdditiveBlending,

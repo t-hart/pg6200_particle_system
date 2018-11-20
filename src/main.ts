@@ -92,7 +92,7 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
     .then(centerModel)
     .then(model => scene.add(model))
 
-  const numPoints = 15000
+  const numPoints = 50000
 
   const dimensions = { x: 500, y: 500, z: 500 }
   const snowList = snow.make(dimensions)(numPoints)

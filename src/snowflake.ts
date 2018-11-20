@@ -26,10 +26,11 @@ export const addForce = (force: vec.t) => (snowflake: t): vec.t => {
 }
 
 export const create = (xzBiasSpread: number): t => {
-  const baseVelocity = velocityVec(xzBiasSpread)
+  const drag = Math.random() * .3 + .1
+  const baseVelocity = vec.scale(drag)(velocityVec(xzBiasSpread))
   return {
     baseVelocity,
-    drag: Math.random() * .3 + .1,
+    drag,
     velocity: baseVelocity
   }
 }
