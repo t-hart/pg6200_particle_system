@@ -1,8 +1,6 @@
 import * as three from 'three'
 import { range, zip } from './utils'
 import * as vec from './vector3'
-import fresnel from './shaders/fresnel'
-import gammon from './shaders/gammon'
 
 //models
 import disc from 'assets/textures/sprites/disc.png'
@@ -16,23 +14,28 @@ import snow5 from 'assets/textures/sprites/snowflake5.png'
 const textureLoader = new three.TextureLoader()
 
 const velocityVec = () => ({
-  x: Math.random() - .5,
+  x: three.Math.randFloatSpread(10),
   y: 0,
-  z: Math.random() - .5
+  z: three.Math.randFloatSpread(10)
 })
 
-const gammonMtl = new three.ShaderMaterial(gammon);
+const createPoints3D = (dimensions: vec.t) => (n: number) => {
+  const dimensionsAsArray = vec.asArray(dimensions)
+  return range({ n: n * 3 }).map(m => three.Math.randFloatSpread(dimensionsAsArray[m % 3]))
+}
 
-const createPoints3D = (n: number) => range({ n: n * 3 }).map(_ => 2000 * Math.random() - 1000)
-
-const cloud = (n: number) => (material: three.PointsMaterial) => (h: number, s: number, l: number) => {
-  const vertices = createPoints3D(n)
+const cloud = (dimensions: vec.t) => (n: number) => (material: three.PointsMaterial) => (h: number, s: number, l: number) => {
+  const vertices = createPoints3D(dimensions)(n)
 
   const geometry = new three.BufferGeometry()
 
   geometry.addAttribute('position', new three.Float32BufferAttribute(vertices, 3))
 
-  material.color.setHSL(h, s, l)
+  const vertexDisplacement = new Float32Array(geometry.attributes.position.count)
+  vertexDisplacement.forEach((_, i) => vertexDisplacement[i] = Math.sin(i))
+
+  geometry.addAttribute('vertexDisplacement', new three.BufferAttribute(vertexDisplacement, 1))
+  // material.color.setHSL(h, s, l)
 
   const points = new three.Points(geometry, material)
 
@@ -41,19 +44,20 @@ const cloud = (n: number) => (material: three.PointsMaterial) => (h: number, s: 
   return { material, points, velocity, geometry, velocities }
 }
 
-export const snow = (n: number) => [
-  [snow1, [1, .2, .5], 17],
-  [snow2, [.95, .1, .5], 19],
-  [snow3, [.9, .05, .5], 23],
-  [snow4, [.85, 0, .5], 29],
-  [snow5, [.8, 0, .5], 31]
-].map(([tex, hsl, size]) => cloud(n / 5)(new three.PointsMaterial({
+export const snow = (dimensions: vec.t) => (n: number) => [
+  [snow1, [1, .2, .5], 3.55],
+  [snow2, [.95, .1, .5], 4],
+  [snow3, [.9, .05, .5], 3.33],
+  [snow4, [.85, 0, .5], 2],
+  [snow5, [.8, 0, .5], 3]
+].map(([tex, hsl, size]) => cloud(dimensions)(n / 5)(new three.PointsMaterial({
   size,
   blending: three.AdditiveBlending,
   depthTest: false,
   map: textureLoader.load(tex),
-  alphaTest: 0.5,
-  transparent: true
+  // alphaTest: 0.5,
+  transparent: true,
+  // color: 0x888888
 }))(...hsl)
 )
 
@@ -64,7 +68,8 @@ export const create = (n: number) => cloud(n)(new three.PointsMaterial({
   transparent: true
 }))(1, .3, .7)
 
-export const update = (geometry: three.BufferGeometry, velocities: vec.t[]) => (time: number) => {
+export const update = (dimensions: vec.t) => (cameraPosition: vec.t) => (geometry: three.BufferGeometry, velocities: vec.t[]) => (time: number, cosTime: number) => {
+  const outsideForces = { x: .1 + 15 * (1 + cosTime), y: -9.81, z: 2 * cosTime }
   const posArr = geometry.getAttribute('position')
   velocities.forEach((v, i) => {
     const pos = {
@@ -73,9 +78,8 @@ export const update = (geometry: three.BufferGeometry, velocities: vec.t[]) => (
       z: posArr.getZ(i),
     }
 
-    const outsideForces = { x: 0, y: -.5, z: 0 }
     const velocity = vec.scale(time)(vec.add(v, outsideForces))
-    const { x, y, z } = vec.addWithin({ x: 1000, y: 1000, z: 1000 })
+    const { x, y, z } = vec.addWithin(dimensions)(cameraPosition)
       (pos, velocity)
 
     geometry.getAttribute('position').setXYZ(i, x, y, z)
