@@ -13,6 +13,8 @@ export const add = (...vecs: t[]) =>
 export const subtract = (...vecs: t[]) =>
   vecs.reduce((acc, { x, y, z }) => ({ x: acc.x - x, y: acc.y - y, z: acc.z - z }))
 
+export const zero = () => ({ x: 0, y: 0, z: 0 })
+
 export const addWithin = (edges: t) => (center: t) => (...vecs: t[]) => {
   const offset = scale(.5)(edges)
   const min = subtract(center, offset)

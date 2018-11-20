@@ -5,32 +5,31 @@ import * as utils from './utils'
 export interface t {
   baseVelocity: vec.t,
   drag: number,
-  externalVelocity: vec.t,
   velocity: vec.t
 }
 
-const velocityVec = () => ({
-  x: three.Math.randFloatSpread(10),
+const kineticEnergy = ({ mass, velocity }: t): vec.t => vec.scale(0.5 * mass)(velocity)
+
+const velocityVec = (spread: number = 1) => ({
+  x: three.Math.randFloatSpread(spread),
   y: 0,
-  z: three.Math.randFloatSpread(10)
+  z: three.Math.randFloatSpread(spread)
 })
 
-export const addForce = (force: vec.t) => (snowflake: t) => {
-  const external = vec.scale(snowflake.drag)(force)
-  const clamp = (component: string): number => utils.clamp(0, force[component])(external[component])
-  const max = { x: clamp('x'), y: clamp('y'), z: clamp('z') }
-  return {
-    ...snowflake,
-    externalVelocity: vec.scale(snowflake.drag)(force),
-    velocity: snowflake.velocity + vec.scale(snowflake.drag)(force)
-  }
+export const getVelocity = ({ baseVelocity, velocity }: t): vec.t => vec.add(baseVelocity, velocity)
+
+export const addForce = (force: vec.t) => (snowflake: t): vec.t => {
+  // const velocity = vec.add(vec.scale(snowflake.drag)(snowflake.velocity), vec.scale(snowflake.drag)(force))
+  const velocity = vec.add(vec.scale(snowflake.drag)(snowflake.velocity), vec.scale(snowflake.drag)(force))
+  snowflake.velocity = velocity
+  return vec.add(snowflake.baseVelocity, velocity)
 }
 
-export const create = () => {
-  const baseVelocity = velocityVec()
+export const create = (xzBiasSpread: number): t => {
+  const baseVelocity = velocityVec(xzBiasSpread)
   return {
     baseVelocity,
-    drag: Math.random(),
+    drag: Math.random() * .3 + .1,
     velocity: baseVelocity
   }
 }

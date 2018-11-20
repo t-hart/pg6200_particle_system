@@ -3,7 +3,7 @@ import { OrbitControls } from './orbitControls'
 import fresnel from './shaders/fresnel'
 
 import * as maleModel from './maleModel'
-import * as pointCloud from './pointCloud'
+import * as snow from './snow'
 
 
 const initControls = (renderer: three.WebGLRenderer) => (camera: three.PerspectiveCamera) => {
@@ -33,7 +33,7 @@ const perspectiveCamera = (width: number, height: number) => new three.Perspecti
 
 const initCamera = (width: number, height: number) => {
   const camera = perspectiveCamera(width, height)
-  camera.position.z = 500
+  camera.position.z = 250
   return camera
 }
 
@@ -60,6 +60,14 @@ const addResizeListener = (renderer: three.Renderer, camera: three.Camera) => {
   }
 }
 
+const centerModel = (model: three.Object3D) => {
+  const box = new three.Box3().setFromObject(model)
+  const boundingBoxSize = box.max.sub(box.min)
+  const height = boundingBoxSize.y
+  model.position.y = - height / 2
+  return model
+}
+
 export const init = (width: number, height: number) => (canvas: HTMLCanvasElement) => {
   // initialization
   const scene = initScene()
@@ -80,33 +88,34 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   initControls(renderer)(camera)
 
   //models
-  // maleModel.create().then(x => scene.add(x))
+  maleModel.create()
+    .then(centerModel)
+    .then(model => scene.add(model))
 
-  const numPoints = 10000
+  const numPoints = 15000
 
-  const dimensions = { x: 300, y: 300, z: 300 }
-  const snow = pointCloud.snow(dimensions)(numPoints)
-  snow.forEach(({ points }) => scene.add(points))
-  const update = pointCloud.update(dimensions)
+  const dimensions = { x: 500, y: 500, z: 500 }
+  const snowList = snow.make(dimensions)(numPoints)
+  snowList.forEach(({ points }) => scene.add(points))
+  const update = snow.update(dimensions)
 
   const gravity = { x: 0, y: -9.81, z: 0 }
   const winds = { x: 50, y: 0, z: 5 }
 
   const animate = (previous: number) => (now: number) => {
     const time = now * .01
-    // const cosTime = Math.cos(time * .02)
-    const timeTrunc = time * .00015
-    // const cosTime = Math.cos(timeTrunc * Math.cos(timeTrunc * 991) * 997)
-    const cosTime = (Math.cos(timeTrunc * 997) + Math.cos(timeTrunc * 997)) * .5
-    // console.log(cosTime)
+    const timeTrunc = now * .0000005
+    const cosTime = (Math.cos(timeTrunc * 997) + Math.cos(timeTrunc * 997)) + 2
     const delta = time - previous
-    requestAnimationFrame(animate(time))
 
-    snow.forEach(({ geometry, velocities }) => {
-      update(camera.position)(geometry, velocities)(delta, cosTime)
+    snowList.forEach(({ geometry, snowflakes }) => {
+      update(camera.position)(geometry, snowflakes)(delta, cosTime)
     })
 
     renderer.render(scene, camera)
+
+    requestAnimationFrame(animate(time))
+
   }
   requestAnimationFrame(animate(0))
 }
