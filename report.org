@@ -1,0 +1,15 @@
+*  PG6200 Graphics Programming Home Exam: particle system
+** Choice of motif (snow)
+** Technical challenges
+*** Three.js and custom shaders
+*** Immutability vs mutability
+** Parts I'm particularly pleased with
+*** Code snippets
+** Source structure
+*** Parcel and the build structure
+**** Running the project
+*** Typescript and differences from JS
+**  Grounding in physics
+** Next steps
+*** Moving as much as possible over to the shaders
+** References?
