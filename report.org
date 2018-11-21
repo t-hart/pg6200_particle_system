@@ -1,5 +1,8 @@
 *  PG6200 Graphics Programming Home Exam: particle system
-** Choice of motif (snow)
+** Overview
+   This report details the development and result of the Three.js particle system assignment.
+   The end result should have the appearance of thick, gentle snow falling and being picked up by the wind.
+** Choice of motif
    While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it.
 
 ** Technical challenges
@@ -7,18 +10,60 @@
     The processing of ~50,000+ vertices, calculating their next position based on their current velocity and outside forces such as wind and gravity, is a fairly computationally intensive job that would greatly benefit from being done in parallel on the GPU rather than in serial on the CPU. Thus an attempt was made at writing shaders that would perform the calculations and move the snowflakes appropriately. However, due to the way Three.js deals with shaders--including how it abstracts them away into a black box--and the lack of good documentation for it, this, in the end, was not implemented, as it was not considered to be the most pressing issue.
 
 *** Immutability vs mutability
-    When deciding to process these positions on the CPU (in javascript), a decision for how to perform the processing also had to be made. The snowflakes are objects containing a small set of fields, including current position, drag, and their base velocity, which I would usually use to populate a copy. This copy would then be placed back into the array, replacing the original object. This allows the update function to be pure and referentially transparent, but it also comes with a bit of overhead due to the constant creation and scrapping of these objects. While there was no rigorous testing done, a quick A/B-testing session seemed to favor mutating the value stored in the object over the creation of a new one. This is in line with the conventional (and intuitive) wisdom that a small mutation to a data structure is more performant than a full clone of said structure, which is especially pertinent in environments such as graphics, where you only have a very limited amount of time per frame.
+    When deciding to process these positions on the CPU (in JavaScript), a decision for how to perform the processing also had to be made. The snowflakes are objects containing a small set of fields, including current position, drag, and their base velocity, which I would usually use to populate a copy. This copy would then be placed back into the array, replacing the original object. This allows the update function to be pure and referentially transparent, but it also comes with a bit of overhead due to the constant creation and scrapping of these objects. While there was no rigorous testing done, a quick A/B-testing session seemed to favor mutating the value stored in the object over the creation of a new one. This is in line with the conventional (and intuitive) wisdom that a small mutation to a data structure is more performant than a full clone of said structure, which is especially pertinent in environments such as graphics, where you only have a very limited amount of time per frame.
 
-** Parts I'm particularly pleased with
-*** Code snippets
+** Implementation
+*** A note on naming conventions
+    For modules that export a type and functions related to that type (~snowflake.ts~ and ~vector3.ts~) the type they export is named ~t~. This is a convention taken from the OCaml/ReasonML community which helps avoid double qualifications such as ~vector3.vector3~ and makes refactoring easier on the developer, as there is no need to update the name of the type if the module name should change.
+
+*** Snowflakes
+    This is the core data structure for the particles. Along with the ~BufferGeometry~'s ~position~ buffer, an array of ~snowflake~ instances provide the necessary information to calculate the next position and then update the buffer.
+    The snowflake interface looks like this:
+    #+BEGIN_SRC js
+export interface t {
+  baseVelocity: vec.t,
+  drag: number,
+  velocity: vec.t
+}
+    #+END_SRC
+
+  The ~baseVelocity~ is the inherent velocity of each snowflake. To simulate randomness and snowflakes having different properties based on their physical shape, size, etc, each snowflake is assigned a random xz vector which it will move along, even if there is no wind. If this is slight enough, it creates the illusion of snowflakes circling as they fall.
+
+  The ~drag~ property is a floating point number between 0.1 and 1.0 which scales outside forces affecting the snowflake. The outside force is multiplied by this factor, so it is actually an inverse, with values approaching one providing less resistance. Each snowflake is provided with its own value.
+
+  The ~velocity~ vector is the snowflake's current velocity, and is used to calculate its next position.
+
+*** Wrapping and the 'area of effect'
+    To simulate continually falling snow or other similar effects that continuously update and that cover an area, it makes sense to simply have objects/vertices 'wrap around' once they reach the edges of a cube centered around a point. This point would usually be the camera, which would make it seem as if the entire scene is affected by this effect. In this case, however, the snow is centered around the model and the origin of the scene, as that allows the user to move around and inspect the whole shape. This is achieved using the following function to calculate where a number should land between a minimum and a maximum and wrap around if it is outside of the specified bounds.
+
+    #+BEGIN_SRC js
+export const wrap = (min: number, max: number) => (n: number): number => {
+  const diff = max - min
+  return n < min ? max - Math.abs(n - min) % diff :
+    n > max ? min + Math.abs(n - max) % diff :
+      n
+}
+    #+END_SRC
+
 ** Source structure
 *** Parcel and the build structure
-    The project is built using a javascript bundler called [[https://parceljs.org][Parcel]]. This allows for a quicker iteration cycle and also opens up the door to use specific variations of javascript which can then be transpiled to regular javascript for distribution.
+    The project is built using a JavaScript bundler called [[https://parceljs.org][Parcel]]. This allows for a quicker iteration cycle and also opens up the door to use specific variations of JavaScript which can then be transpiled to regular JavaScript for distribution.
 
     A side effect of using a bundler such as this is that the source code (used for development) and the distribution-ready code (minified and hard to work with) live separately, in the ~src~ and ~dist~ folders respectively. As a result, to run the project, please open the ~index.html~ file in the ~dist~ directory, while if you would like to examine the source code, please consult the ~src~ directory.
+
 **** Running the project
-*** Typescript and differences from JS
-**  Grounding in physics
+     As mentioned in the above paragraph, run the ~index.html~ file in the ~dist~ directory in your browser.
+
+*** TypeScript and differences from JavaScript
+    Related to the bundler and its capabilities, the code is written in TypeScript, a typed superset of JavaScript. The differences are minimal and comprise solely of type annotations, implemented as ~: <type>~ after variable names or functions. While this does not provide any runtime guarantees, it is a very effective tool to increase the confidence in your code and it can also help to clarify intentions. For this reason, all code samples in this report will be using this JavaScript superset.
+
+** Grounding in physics
+*** TODO The wind cycle
+    The 'wind' effect oscillates based on a function of the time of the current animation frame. More specifically, it combines the result of two cosine functions based on .
+*** Gravity, wind, and outside forces
+    On every update, the sum of the gravity and the wind gets passed in to the snowflake manipulation function and added to each and every snowflake's velocity after applying drag.
+
 ** Next steps
 *** Moving as much as possible over to the shaders
-** References?
+    Performance-wise, moving all the particles over into the shaders would likely grant a pretty significant speed-up and would be highest on the list of priorities.
+    After that, improving the realism by incorporating more realistic physics is likely to take it up another notch.
