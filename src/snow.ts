@@ -36,7 +36,7 @@ const cloud = (dimensions: vec.t) => (n: number) => (material: three.PointsMater
 
   const points = new three.Points(geometry, material)
 
-  const snowflakes = range({ n }).map(_ => snowflake.create(1))
+  const snowflakes = range({ n }).map(_ => snowflake.create(1.5))
   return { points, geometry, snowflakes }
 }
 
@@ -56,9 +56,7 @@ export const make = (dimensions: vec.t) => (n: number) => [
 }))
 )
 
-export const update = (dimensions: vec.t) => (cameraPosition: vec.t) => (geometry: three.BufferGeometry, snowflakes: snowflake.t[]) => (time: number, cosTime: number) => {
-  const outsideForces = vec.scale(time)({ x: 1 * cosTime * cosTime, y: .3 * -9.81, z: 0.5 * cosTime })
-  // const outsideForces = { x: 1 * cosTime * cosTime, y: .3 * -9.81, z: 0.5 * cosTime }
+export const update = (dimensions: vec.t) => (outsideForces: vec.t) => (geometry: three.BufferGeometry, snowflakes: snowflake.t[]) => {
   const posArr = geometry.getAttribute('position')
   snowflakes.forEach((sf, i) => {
     const pos = {
@@ -69,7 +67,6 @@ export const update = (dimensions: vec.t) => (cameraPosition: vec.t) => (geometr
 
     const v = snowflake.addForce(outsideForces)(sf)
 
-    // const { x, y, z } = vec.addWithin(dimensions)(cameraPosition)
     const { x, y, z } = vec.addWithin(dimensions)({ x: 0, y: 0, z: 0 })
       (pos, v)
 
