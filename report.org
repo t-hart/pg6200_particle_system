@@ -1,12 +1,21 @@
 *  PG6200 Graphics Programming Home Exam: particle system
 ** Choice of motif (snow)
+   While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it.
+
 ** Technical challenges
 *** Three.js and custom shaders
+    The processing of ~50,000+ vertices, calculating their next position based on their current velocity and outside forces such as wind and gravity, is a fairly computationally intensive job that would greatly benefit from being done in parallel on the GPU rather than in serial on the CPU. Thus an attempt was made at writing shaders that would perform the calculations and move the snowflakes appropriately. However, due to the way Three.js deals with shaders--including how it abstracts them away into a black box--and the lack of good documentation for it, this, in the end, was not implemented, as it was not considered to be the most pressing issue.
+
 *** Immutability vs mutability
+    When deciding to process these positions on the CPU (in javascript), a decision for how to perform the processing also had to be made. The snowflakes are objects containing a small set of fields, including current position, drag, and their base velocity, which I would usually use to populate a copy. This copy would then be placed back into the array, replacing the original object. This allows the update function to be pure and referentially transparent, but it also comes with a bit of overhead due to the constant creation and scrapping of these objects. While there was no rigorous testing done, a quick A/B-testing session seemed to favor mutating the value stored in the object over the creation of a new one. This is in line with the conventional (and intuitive) wisdom that a small mutation to a data structure is more performant than a full clone of said structure, which is especially pertinent in environments such as graphics, where you only have a very limited amount of time per frame.
+
 ** Parts I'm particularly pleased with
 *** Code snippets
 ** Source structure
 *** Parcel and the build structure
+    The project is built using a javascript bundler called [[https://parceljs.org][Parcel]]. This allows for a quicker iteration cycle and also opens up the door to use specific variations of javascript which can then be transpiled to regular javascript for distribution.
+
+    A side effect of using a bundler such as this is that the source code (used for development) and the distribution-ready code (minified and hard to work with) live separately, in the ~src~ and ~dist~ folders respectively. As a result, to run the project, please open the ~index.html~ file in the ~dist~ directory, while if you would like to examine the source code, please consult the ~src~ directory.
 **** Running the project
 *** Typescript and differences from JS
 **  Grounding in physics
