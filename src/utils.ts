@@ -7,15 +7,9 @@ export const zip = (...arrs: [[]]) =>
 
 export const wrap = (min: number, max: number) => (n: number): number => {
   const diff = max - min
-  if (n < min) {
-    return max - Math.abs(n - min) % diff
-  } else if (n > max) {
-    return min + Math.abs(n - max) % diff
-  } else {
-    return n
-  }
-  // n < min ? max - (n % min) :
-  //   n > max ? min + (n % max)
-  //     : n
+  return n < min ? max - Math.abs(n - min) % diff :
+    n > max ? min + Math.abs(n - max) % diff :
+      n
 }
+
 export const clamp = (min: number, max: number) => (n: number) => n < min ? min : n > max ? max : n
