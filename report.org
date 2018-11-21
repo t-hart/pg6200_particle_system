@@ -58,8 +58,9 @@ export const wrap = (min: number, max: number) => (n: number): number => {
     Related to the bundler and its capabilities, the code is written in TypeScript, a typed superset of JavaScript. The differences are minimal and comprise solely of type annotations, implemented as ~: <type>~ after variable names or functions. While this does not provide any runtime guarantees, it is a very effective tool to increase the confidence in your code and it can also help to clarify intentions. For this reason, all code samples in this report will be using this JavaScript superset.
 
 ** Grounding in physics
-*** TODO The wind cycle
-    The 'wind' effect oscillates based on a function of the time of the current animation frame. More specifically, it combines the result of two cosine functions based on .
+*** The wind cycle
+    The 'wind' effect oscillates based on a function of the time of the current animation frame. More specifically, it combines the result of two cosine functions based on the current frame time multiplied by two separate prime numbers. The idea is to make the cycle slightly different on every round and avoid repeating patterns as much as possible.
+
 *** Gravity, wind, and outside forces
     On every update, the sum of the gravity and the wind gets passed in to the snowflake manipulation function and added to each and every snowflake's velocity after applying drag.
 
