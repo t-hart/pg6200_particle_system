@@ -1,6 +1,6 @@
 import * as three from 'three'
 import { OrbitControls } from './orbitControls'
-import fresnel from './shaders/fresnel'
+import * as vec from './vector3'
 
 import * as maleModel from './maleModel'
 import * as snow from './snow'
@@ -100,16 +100,17 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   const update = snow.update(dimensions)
 
   const gravity = { x: 0, y: -9.81, z: 0 }
-  const winds = { x: 50, y: 0, z: 5 }
 
   const animate = (previous: number) => (now: number) => {
     const time = now * .01
-    const timeTrunc = now * .0000005
-    const cosTime = (Math.cos(timeTrunc * 997) + Math.cos(timeTrunc * 997)) + 2
+    const timeTrunc = now
+    const cosTime = Math.cos(timeTrunc * .000997) + Math.cos(timeTrunc * .000991) + 2
+    const wind = { x: cosTime * cosTime, y: 0, z: .5 * (cosTime - 2) }
     const delta = time - previous
+    const totalForces = vec.scale(delta)(vec.add(gravity, wind))
 
     snowList.forEach(({ geometry, snowflakes }) => {
-      update(camera.position)(geometry, snowflakes)(delta, cosTime)
+      update(totalForces)(geometry, snowflakes)
     })
 
     renderer.render(scene, camera)
