@@ -35,8 +35,6 @@ const perspectiveCamera = (width: number, height: number) => new three.Perspecti
 
 const initCamera = (width: number, height: number) => (particleSystemDimensions: vec.t) => {
   const camera = perspectiveCamera(width, height)
-  camera.position.z = particleSystemDimensions.z / 2
-  camera.position.y = particleSystemDimensions.y / 2
   return camera
 }
 
@@ -93,7 +91,8 @@ const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
     ['size', 1, 200],
     ['scale', 1, 100],
     ['gravityMultiplier', -50, 50],
-    ['windMultiplier', -50, 50],
+    ['windX', -50, 50],
+    ['windZ', -50, 50],
     ['opacity', 0, 1],
     ['radius', 0, 5]
   ].forEach(row => add(...row))
@@ -106,6 +105,10 @@ const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
 export const init = (width: number, height: number) => (canvas: HTMLCanvasElement) => {
   // const dimensions = { x: 1000, y: 1000, z: 1000 }
   const dimensions = { x: 500, y: 500, z: 500 }
+  const bounds = {
+    min: { x: -dimensions.x / 2, y: 0, z: -dimensions.z / 2 },
+    max: { x: dimensions.x / 2, y: dimensions.y, z: dimensions.z / 2 }
+  }
 
   // initialization
   const scene = initScene()
@@ -128,13 +131,16 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   maleModel.create()
     .then(model => scene.add(model))
 
-  const numPoints = 50000
+  const numPoints = 10000
 
   const params = parameters.defaultValue()
-  const snowParticles = snow.make(dimensions, params)(numPoints)
+  const snowParticles = snow.make(bounds, params)(numPoints)
   scene.add(snowParticles.points)
 
   initGUI(snowParticles.material, params)
+
+  camera.position.z = bounds.max.z
+  camera.position.y = bounds.max.y / 2
 
   const animate = (previous: number) => (now: number) => {
     snowParticles.points.material.uniforms.time.value = now * .001

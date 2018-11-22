@@ -1,7 +1,8 @@
 export interface t {
   size: number,
   gravityMultiplier: number,
-  windMultiplier: number,
+  windX: number,
+  windZ: number,
   color: number,
   opacity: number,
   radius: number,
@@ -10,10 +11,11 @@ export interface t {
 
 export const defaultValue = (): t => ({
   color: 0xFFFFFF,
-  radius: 2.5,
-  size: 30,
+  radius: .5,
+  size: 70,
   opacity: .5,
   gravityMultiplier: 9.81,
-  windMultiplier: 7,
+  windX: 7,
+  windZ: 7,
   scale: 30
 })

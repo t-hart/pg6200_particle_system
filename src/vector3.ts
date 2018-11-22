@@ -47,3 +47,5 @@ export const assignVectorThree = (vector3: three.Vector3, ...vecs: t[]) => {
 }
 
 export const asArray = (vec: t) => [vec.x, vec.y, vec.z]
+
+export const asThreeVector = ({ x, y, z }: t) => new three.Vector3(x, y, z)
