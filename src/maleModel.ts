@@ -2,7 +2,6 @@ import * as three from 'three'
 import { OBJLoader, MTLLoader } from 'three-obj-mtl-loader'
 import { asPromise } from './loaders'
 
-//models
 import model from 'assets/obj/male02/male02.obj'
 import mtl from 'assets/obj/male02/male02.mtl'
 import tex from 'assets/textures/UV_Grid_Sm.jpg'
