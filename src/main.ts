@@ -106,8 +106,8 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   // const dimensions = { x: 1000, y: 1000, z: 1000 }
   const dimensions = { x: 500, y: 500, z: 500 }
   const bounds = {
-    min: { x: -dimensions.x / 2, y: 0, z: -dimensions.z / 2 },
-    max: { x: dimensions.x / 2, y: dimensions.y, z: dimensions.z / 2 }
+    min: { x: -dimensions.x / 2, y: -dimensions.y / 2, z: -dimensions.z / 2 },
+    max: { x: dimensions.x / 2, y: dimensions.y / 2, z: dimensions.z / 2 }
   }
 
   // initialization
@@ -129,6 +129,7 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
 
   //models
   maleModel.create()
+    .then(centerModel)
     .then(model => scene.add(model))
 
   const numPoints = 20000

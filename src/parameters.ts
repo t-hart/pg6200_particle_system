@@ -14,7 +14,7 @@ export const defaultValue = (): t => ({
   radius: .5,
   size: 70,
   opacity: .5,
-  gravity: 9.81,
+  gravity: 20,
   windX: 7,
   windZ: 7,
   scale: 30
