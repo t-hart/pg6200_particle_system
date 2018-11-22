@@ -22,6 +22,6 @@ void main() {
   pos.z = wrap(minCoordinates.z, maxCoordinates.z, pos.z + time * windZ + cos(time + pos.z) * windZ * radius);
 
   vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1);
-  gl_PointSize = size * ( scale / length(modelViewPosition.xyz));
+  gl_PointSize = size * (scale / length(modelViewPosition.xyz));
   gl_Position = projectionMatrix * modelViewPosition;
 }

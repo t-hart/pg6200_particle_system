@@ -5,7 +5,7 @@
    Please experiment with tweaking the parameters in the top right corner to see how that affects the effect. The default is a fairly mild snowfall, but can get pretty heavy with the right settings.
 
 ** Choice of motif
-   While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it.
+   While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it and it proved to be an interesting and satisfying problem domain.
 
 ** Technical challenges
 *** Three.js and custom shaders
@@ -41,19 +41,41 @@
 
    The ~velocity~ vector is the snowflake's current velocity, and is used to calculate its next position.
 
-*** Wrapping and the 'area of effect'
-    To simulate continually falling snow or other similar effects that continuously update and that cover an area, it makes sense to simply have objects/vertices 'wrap around' once they reach the edges of a cube centered around a point. This point would usually be the camera, which would make it seem as if the entire scene is affected by this effect. In this case, however, the snow is centered around the model and the origin of the scene, as that allows the user to move around and inspect the whole shape. This is achieved using the following function to calculate where a number should land between a minimum and a maximum and wrap around if it is outside of the specified bounds.
+*** The vertex shader, wrapping and the 'area of effect'
+    To simulate continually falling snow or other similar effects that continuously update and that cover an area, it makes sense to simply have objects/vertices 'wrap around' once they reach the edges of a cube centered around a point. This point would usually be the camera, which would make it seem as if the entire scene is affected by this effect. In this case, however, the snow is centered around the model and the origin of the scene, as that allows the user to move around and inspect the whole shape. This is achieved using the wrap function to calculate where a number should land between a minimum and a maximum and wrap around if it is outside of the specified bounds.
 
     #+BEGIN_SRC glsl
-float wrap (float min, float max, float n) {
-  float diff = max - min;
-  return n < min ? max - mod(abs(n - min), diff) :
-    n > max ? min + mod(abs(n - max), diff) :
-    n;
-}
+  float wrap (float min, float max, float n) {
+    float diff = max - min;
+    return n < min ? max - mod(abs(n - min), diff) :
+      n > max ? min + mod(abs(n - max), diff) :
+      n;
+  }
     #+END_SRC
 
   This has the advantage over a naive modulo implementation that it also takes into consideration a potential offset that area might have.
+
+    After having moved all of the heavy lifting over to the GPU and the shaders, the vertex shader is still surprisingly short and succinct. It achieves its effects by using a combination of the time, cosine functions, and its various position components to calculate the next position.
+
+#+BEGIN_SRC glsl
+  //imports
+  /* ... */
+
+  float wrap (float min, float max, float n) {/*...*/}
+
+  void main() {
+    vec3 pos = position;
+    pos.x = wrap(minCoordinates.x, maxCoordinates.x,
+      pos.x + time * windX + cos(time + pos.z) * windX * radius);
+    pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravity);
+    pos.z = wrap(minCoordinates.z, maxCoordinates.z,
+      pos.z + time * windZ + cos(time + pos.z) * windZ * radius);
+
+    vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1);
+    gl_PointSize = size * (scale / length(modelViewPosition.xyz));
+    gl_Position = projectionMatrix * modelViewPosition;
+  }
+#+END_SRC
 
 ** Source structure
 *** Parcel and the build structure
