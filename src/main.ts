@@ -33,7 +33,7 @@ const initRenderer = (width: number, height: number) => (canvas: HTMLCanvasEleme
 
 const perspectiveCamera = (width: number, height: number) => new three.PerspectiveCamera(50, width / height, 1, 5000)
 
-const initCamera = (width: number, height: number) => (particleSystemDimensions: vec.t) => {
+const initCamera = (width: number, height: number) => {
   const camera = perspectiveCamera(width, height)
   return camera
 }
@@ -103,7 +103,6 @@ const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
 }
 
 export const init = (width: number, height: number) => (canvas: HTMLCanvasElement) => {
-  // const dimensions = { x: 1000, y: 1000, z: 1000 }
   const dimensions = { x: 500, y: 500, z: 500 }
   const bounds = {
     min: { x: -dimensions.x / 2, y: -dimensions.y / 2, z: -dimensions.z / 2 },
@@ -113,7 +112,8 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   // initialization
   const scene = initScene()
   const renderer = initRenderer(width, height)(canvas)
-  const camera = initCamera(width, height)(dimensions)
+  const camera = initCamera(width, height)
+  camera.position.z = bounds.max.z
   const directionalLight = initDirectionalLight()
   const ambientLight = initAmbientLight()
 
@@ -140,13 +140,10 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
 
   initGUI(snowParticles.material, params)
 
-  camera.position.z = bounds.max.z
-  // camera.position.y = bounds.max.y / 2
-
-  const animate = (previous: number) => (now: number) => {
+  const animate = (now: number) => {
     snowParticles.points.material.uniforms.time.value = now * .001
     renderer.render(scene, camera)
-    requestAnimationFrame(animate(now))
+    requestAnimationFrame(animate)
   }
-  requestAnimationFrame(animate(0))
+  requestAnimationFrame(animate)
 }
