@@ -1,5 +1,7 @@
 import * as three from 'three'
 import { OrbitControls } from './orbitControls'
+import * as dat from 'dat.gui'
+import * as parameters from './parameters'
 import * as vec from './vector3'
 
 import * as maleModel from './maleModel'
@@ -33,7 +35,6 @@ const perspectiveCamera = (width: number, height: number) => new three.Perspecti
 
 const initCamera = (width: number, height: number) => {
   const camera = perspectiveCamera(width, height)
-  camera.position.z = 250
   return camera
 }
 
@@ -68,17 +69,56 @@ const centerModel = (model: three.Object3D) => {
   return model
 }
 
+const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
+  const handleChange = () => {
+    Object.keys(material.uniforms)
+      .filter(x => x !== 'color')
+      .forEach(prop => {
+        if (params[prop] !== undefined) {
+          material.uniforms[prop].value = params[prop]
+        }
+      })
+    material.uniforms.color.value.set(params.color)
+  }
+
+  const controls = new dat.GUI()
+
+  const add = (prop: string, min: number, max: number) => {
+    controls.add(params, prop, min, max).onChange(handleChange)
+  }
+
+  [
+    ['size', 1, 200],
+    ['scale', 1, 100],
+    ['gravity', -50, 50],
+    ['windX', -100, 100],
+    ['windZ', -100, 100],
+    ['opacity', 0, 1],
+    ['radius', 0, 2]
+  ].forEach(row => add(...row))
+
+  controls.addColor(params, 'color').onChange(handleChange)
+
+  return controls
+}
+
 export const init = (width: number, height: number) => (canvas: HTMLCanvasElement) => {
+  const dimensions = { x: 500, y: 500, z: 500 }
+  const bounds = {
+    min: { x: -dimensions.x / 2, y: -dimensions.y / 2, z: -dimensions.z / 2 },
+    max: { x: dimensions.x / 2, y: dimensions.y / 2, z: dimensions.z / 2 }
+  }
+
   // initialization
   const scene = initScene()
   const renderer = initRenderer(width, height)(canvas)
   const camera = initCamera(width, height)
+  camera.position.z = bounds.max.z
   const directionalLight = initDirectionalLight()
   const ambientLight = initAmbientLight()
 
   // resize listening
   addResizeListener(renderer, camera)
-
 
   // lighting
   scene.add(ambientLight)
@@ -92,31 +132,18 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
     .then(centerModel)
     .then(model => scene.add(model))
 
-  const numPoints = 50000
+  const numPoints = 20000
 
-  const dimensions = { x: 500, y: 500, z: 500 }
-  const snowList = snow.make(dimensions)(numPoints)
-  snowList.forEach(({ points }) => scene.add(points))
-  const update = snow.update(dimensions)
+  const params = parameters.defaultValue()
+  const snowParticles = snow.make(bounds, params)(numPoints)
+  scene.add(snowParticles.points)
 
-  const gravity = { x: 0, y: -9.81, z: 0 }
+  initGUI(snowParticles.material, params)
 
-  const animate = (previous: number) => (now: number) => {
-    const time = now * .01
-    const timeTrunc = now
-    const cosTime = Math.cos(timeTrunc * .000997) + Math.cos(timeTrunc * .000991) + 2
-    const wind = { x: cosTime * cosTime, y: 0, z: .5 * (cosTime - 2) }
-    const delta = time - previous
-    const totalForces = vec.scale(delta)(vec.add(gravity, wind))
-
-    snowList.forEach(({ geometry, snowflakes }) => {
-      update(totalForces)(geometry, snowflakes)
-    })
-
+  const animate = (now: number) => {
+    snowParticles.points.material.uniforms.time.value = now * .001
     renderer.render(scene, camera)
-
-    requestAnimationFrame(animate(time))
-
+    requestAnimationFrame(animate)
   }
-  requestAnimationFrame(animate(0))
+  requestAnimationFrame(animate)
 }

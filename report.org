@@ -1,49 +1,81 @@
 *  PG6200 Graphics Programming Home Exam: particle system
 ** Overview
    This report details the development and result of the Three.js particle system assignment.
-   The end result should have the appearance of thick, gentle snow falling and being picked up by the wind.
+   The end result is a particle system which, based on a number of user-configurable inputs, can serve as different types of snowfall.
+   Please experiment with tweaking the parameters in the top right corner to see how that affects the effect. The default is a fairly mild snowfall, but can get pretty heavy with the right settings.
+
 ** Choice of motif
-   While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it.
+   While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it and it proved to be an interesting and satisfying problem domain.
 
 ** Technical challenges
 *** Three.js and custom shaders
-    The processing of ~50,000+ vertices, calculating their next position based on their current velocity and outside forces such as wind and gravity, is a fairly computationally intensive job that would greatly benefit from being done in parallel on the GPU rather than in serial on the CPU. Thus an attempt was made at writing shaders that would perform the calculations and move the snowflakes appropriately. However, due to the way Three.js deals with shaders--including how it abstracts them away into a black box--and the lack of good documentation for it, this, in the end, was not implemented, as it was not considered to be the most pressing issue.
+    For any job where there is a need to process tens of thousands of particles up to 60 times per second and beyond, doing it in parallel on the GPU rather than in serial on the CPU is going to give provide significant performance gains, and thus moving the particle system over to the shaders made a lot of sense for this project. It was, however, no easy task: the documentation, while plentiful, is often hard to decipher and if you don~t know what you are looking for, it can be quite difficult. There was also an apparent lack of tutorials on this subject, which made things even more difficult.o
 
-*** Immutability vs mutability
-    When deciding to process these positions on the CPU (in JavaScript), a decision for how to perform the processing also had to be made. The snowflakes are objects containing a small set of fields, including current position, drag, and their base velocity, which I would usually use to populate a copy. This copy would then be placed back into the array, replacing the original object. This allows the update function to be pure and referentially transparent, but it also comes with a bit of overhead due to the constant creation and scrapping of these objects. While there was no rigorous testing done, a quick A/B-testing session seemed to favor mutating the value stored in the object over the creation of a new one. This is in line with the conventional (and intuitive) wisdom that a small mutation to a data structure is more performant than a full clone of said structure, which is especially pertinent in environments such as graphics, where you only have a very limited amount of time per frame.
+    While I had a decent understanding of shaders and how they work from the previous shadow map exam, the way that Three.js exposes them to you and how you use them was not immediately apparent.
+
+    In the first implementation, before moving the processing over to the shader, everything was done sequentially on the CPU which caused quite a bit of stutter, but this is all gone now that the shaders take care of the particle system.
+
+    I find it curious that all the examples on ~Points~ (previously known as ~ParticleSystem~) available from the /examples/ section of the Three.js website do all their calculations on the CPU, and that there doesn't seem to be canonical example of how to manipulate positions etc. using shaders.
 
 ** Implementation
 *** A note on naming conventions
-    For modules that export a type and functions related to that type (~snowflake.ts~ and ~vector3.ts~) the type they export is named ~t~. This is a convention taken from the OCaml/ReasonML community which helps avoid double qualifications such as ~vector3.vector3~ and makes refactoring easier on the developer, as there is no need to update the name of the type if the module name should change.
+    For modules that export a type and functions related to that type (~boundingBox.ts~ and ~vector3.ts~) the type they export is named ~t~. This is a convention taken from the OCaml/ReasonML community which helps avoid double qualifications such as ~vector3.vector3~ and makes refactoring easier on the developer, as there is no need to update the name of the type if the module name should change.
 
-*** Snowflakes
-    This is the core data structure for the particles. Along with the ~BufferGeometry~'s ~position~ buffer, an array of ~snowflake~ instances provide the necessary information to calculate the next position and then update the buffer.
-    The snowflake interface looks like this:
-    #+BEGIN_SRC js
-export interface t {
-  baseVelocity: vec.t,
-  drag: number,
-  velocity: vec.t
-}
+***  Before shaders
+    In the first, naive iteration of the project, the CPU processed ~snowflakes~ along with positions, and used the data stored in these ~snowflakes~ to update the geometry buffer manually.
+
+**** Snowflakes
+     This was the core data structure for the particles. Along with the ~BufferGeometry~~s ~position~ buffer, an array of ~snowflake~ instances would provide the necessary information to calculate the next position and then update the buffer.
+     The snowflake interface looked like this:
+     #+BEGIN_SRC js
+ export interface t {
+   baseVelocity: vec.t,
+   drag: number,
+   velocity: vec.t
+ }
+     #+END_SRC
+
+   The ~baseVelocity~ is the inherent velocity of each snowflake. To simulate randomness and snowflakes having different properties based on their physical shape, size, etc, each snowflake is assigned a random xz vector which it will move along, even if there is no wind. If this is slight enough, it creates the illusion of snowflakes circling as they fall.
+
+   The ~drag~ property is a floating point number between 0.1 and 1.0 which scales outside forces affecting the snowflake. The outside force is multiplied by this factor, so it is actually an inverse, with values approaching one providing less resistance. Each snowflake is provided with its own value.
+
+   The ~velocity~ vector is the snowflake's current velocity, and is used to calculate its next position.
+
+*** The vertex shader, wrapping and the 'area of effect'
+    To simulate continually falling snow or other similar effects that continuously update and that cover an area, it makes sense to simply have objects/vertices 'wrap around' once they reach the edges of a cube centered around a point. This point would usually be the camera, which would make it seem as if the entire scene is affected by this effect. In this case, however, the snow is centered around the model and the origin of the scene, as that allows the user to move around and inspect the whole shape. This is achieved using the wrap function to calculate where a number should land between a minimum and a maximum and wrap around if it is outside of the specified bounds.
+
+    #+BEGIN_SRC glsl
+  float wrap (float min, float max, float n) {
+    float diff = max - min;
+    return n < min ? max - mod(abs(n - min), diff) :
+      n > max ? min + mod(abs(n - max), diff) :
+      n;
+  }
     #+END_SRC
 
-  The ~baseVelocity~ is the inherent velocity of each snowflake. To simulate randomness and snowflakes having different properties based on their physical shape, size, etc, each snowflake is assigned a random xz vector which it will move along, even if there is no wind. If this is slight enough, it creates the illusion of snowflakes circling as they fall.
+  This has the advantage over a naive modulo implementation that it also takes into consideration a potential offset that area might have.
 
-  The ~drag~ property is a floating point number between 0.1 and 1.0 which scales outside forces affecting the snowflake. The outside force is multiplied by this factor, so it is actually an inverse, with values approaching one providing less resistance. Each snowflake is provided with its own value.
+    After having moved all of the heavy lifting over to the GPU and the shaders, the vertex shader is still surprisingly short and succinct. It achieves its effects by using a combination of the time, cosine functions, and its various position components to calculate the next position.
 
-  The ~velocity~ vector is the snowflake's current velocity, and is used to calculate its next position.
+#+BEGIN_SRC glsl
+  //imports
+  /* ... */
 
-*** Wrapping and the 'area of effect'
-    To simulate continually falling snow or other similar effects that continuously update and that cover an area, it makes sense to simply have objects/vertices 'wrap around' once they reach the edges of a cube centered around a point. This point would usually be the camera, which would make it seem as if the entire scene is affected by this effect. In this case, however, the snow is centered around the model and the origin of the scene, as that allows the user to move around and inspect the whole shape. This is achieved using the following function to calculate where a number should land between a minimum and a maximum and wrap around if it is outside of the specified bounds.
+  float wrap (float min, float max, float n) {/*...*/}
 
-    #+BEGIN_SRC js
-export const wrap = (min: number, max: number) => (n: number): number => {
-  const diff = max - min
-  return n < min ? max - Math.abs(n - min) % diff :
-    n > max ? min + Math.abs(n - max) % diff :
-      n
-}
-    #+END_SRC
+  void main() {
+    vec3 pos = position;
+    pos.x = wrap(minCoordinates.x, maxCoordinates.x,
+      pos.x + time * windX + cos(time + pos.z) * windX * radius);
+    pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravity);
+    pos.z = wrap(minCoordinates.z, maxCoordinates.z,
+      pos.z + time * windZ + cos(time + pos.z) * windZ * radius);
+
+    vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1);
+    gl_PointSize = size * (scale / length(modelViewPosition.xyz));
+    gl_Position = projectionMatrix * modelViewPosition;
+  }
+#+END_SRC
 
 ** Source structure
 *** Parcel and the build structure
@@ -52,19 +84,35 @@ export const wrap = (min: number, max: number) => (n: number): number => {
     A side effect of using a bundler such as this is that the source code (used for development) and the distribution-ready code (minified and hard to work with) live separately, in the ~src~ and ~dist~ folders respectively. As a result, to run the project, please open the ~index.html~ file in the ~dist~ directory, while if you would like to examine the source code, please consult the ~src~ directory.
 
 **** Running the project
-     As mentioned in the above paragraph, run the ~index.html~ file in the ~dist~ directory in your browser.
+     As mentioned in the above paragraph, run the ~index.html~ file in the ~dist~ directory in your browser. As mentioned in the assignment, please make sure you allow CORS when opening the file, as your browser is likely to block some of the content otherwise.
 
 *** TypeScript and differences from JavaScript
     Related to the bundler and its capabilities, the code is written in TypeScript, a typed superset of JavaScript. The differences are minimal and comprise solely of type annotations, implemented as ~: <type>~ after variable names or functions. While this does not provide any runtime guarantees, it is a very effective tool to increase the confidence in your code and it can also help to clarify intentions. For this reason, all code samples in this report will be using this JavaScript superset.
 
 ** Grounding in physics
-*** The wind cycle
-    The 'wind' effect oscillates based on a function of the time of the current animation frame. More specifically, it combines the result of two cosine functions based on the current frame time multiplied by two separate prime numbers. The idea is to make the cycle slightly different on every round and avoid repeating patterns as much as possible.
 
-*** Gravity, wind, and outside forces
-    On every update, the sum of the gravity and the wind gets passed in to the snowflake manipulation function and added to each and every snowflake's velocity after applying drag.
+*** The original implementation
+    While it didn't work out performance-wise, the CPU-bound implementation might have had some more interesting properties in relation to simulating individual snowflakes and forces from the outside.
+
+**** The wind cycle
+     The 'wind' effect would oscillate based on a function of the time of the current animation frame. More specifically, it would combine the result of two cosine functions based on the current frame time multiplied by two separate prime numbers. The idea was to make the cycle slightly different on every round and avoid repeating patterns as much as possible. Based on some rudimentary calculations assuming a steady 60fps, this would have resulted in a pattern that would only repeat itself once every five hours or so.
+
+**** Gravity, wind, and outside forces
+     On every update, the sum of the gravity and the wind would get passed in to the snowflake manipulation function and added to each and every snowflake's velocity after applying drag. As every snowflake would have a randomized drag value and a random base velocity/bias, this meant that, at least in theory, each and every snowflake would react differently and have its own little life.
+
+*** The current implementation
+    Running all the position calculations in the vertex shader brought with it the side effect of also greatly simplifying and generalizing the calculations. While you can surely pass an array of individual snowflake stats to the GPU, it might not be worth it. In my case, I found that I could get a satisfactory effect by simply using the position, current time, and cosine functions of each vertex.
+
+    Furthermore, the original wind cycle has been replaced by user controls, so this second iteration is much simpler overall, yet still looks (and performs) much better.
+
+    The level of accuracy in regards to modeling the real world might not be spot on, but in terms of what is usable in a game or other simulation where this is simply an effect that occurs at times, I would argue that the current implementation is perfectly acceptable and that it might even strike that balance between realism and performance, though I am sure it can still be optimized heavily.
 
 ** Next steps
-*** Moving as much as possible over to the shaders
-    Performance-wise, moving all the particles over into the shaders would likely grant a pretty significant speed-up and would be highest on the list of priorities.
-    After that, improving the realism by incorporating more realistic physics is likely to take it up another notch.
+*** Fine-tuning the user controls
+    While the user controls generally do what they should, there is an issue where manipulating certain parameters--most notably gravity and the winds--causes the snowflakes to move around far too much and completely recalculate their position based on the new input parameters. In this case, it would be preferable to update the coordinates in a more incremental fashion, simply adding just what is needed for the current frame rather than recalculating from the ground up, thus giving a smoother update. This would also come in handy for a potential automated wind system, for instance.
+
+*** Optimizations
+    While there are bits that appear to be particularly slow at the moment. there is always room for some optimization. It might be interesting to see what could be done to optimize the shaders and make the particle system render even smoother.
+
+**  References
+   The main references for this project were the Three.js examples on using points, and in particular [[https://threejs.org/examples/?q=points#webgl_points_sprites][the snow example]]. Furthermore, the [[https://threejs.org/examples/?q=particle#webgl_gpu_particle_system][GPU particle system demo]] demonstrated what could be done with rendering on the GPU. Finally, in addition to the normal slew of StackOverflow questions, I found [[https://soledadpenades.com/articles/three-js-tutorials/rendering-snow-with-shaders/][this tutorial]] towards the end of the alotted time, which explains how to use custom shaders in Three.js in simple terms and with simple examples, and this is what allowed me to finally move over to using shaders.
