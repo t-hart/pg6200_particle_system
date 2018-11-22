@@ -91,10 +91,10 @@ const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
     ['size', 1, 200],
     ['scale', 1, 100],
     ['gravity', -50, 50],
-    ['windX', -50, 50],
-    ['windZ', -50, 50],
+    ['windX', -100, 100],
+    ['windZ', -100, 100],
     ['opacity', 0, 1],
-    ['radius', 0, 5]
+    ['radius', 0, 2]
   ].forEach(row => add(...row))
 
   controls.addColor(params, 'color').onChange(handleChange)
@@ -131,7 +131,7 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   maleModel.create()
     .then(model => scene.add(model))
 
-  const numPoints = 10000
+  const numPoints = 20000
 
   const params = parameters.defaultValue()
   const snowParticles = snow.make(bounds, params)(numPoints)
