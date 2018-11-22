@@ -46,6 +46,7 @@
 *** The vertex shader, wrapping and the 'area of effect'
     To simulate continually falling snow or other similar effects that continuously update and that cover an area, it makes sense to simply have objects/vertices 'wrap around' once they reach the edges of a cube centered around a point. This point would usually be the camera, which would make it seem as if the entire scene is affected by this effect. In this case, however, the snow is centered around the model and the origin of the scene, as that allows the user to move around and inspect the whole shape. This is achieved using the wrap function to calculate where a number should land between a minimum and a maximum and wrap around if it is outside of the specified bounds.
 
+    #+CAPTION: The wrap function.
     #+BEGIN_SRC glsl
   float wrap (float min, float max, float n) {
     float diff = max - min;
@@ -59,16 +60,16 @@
 
     After having moved all of the heavy lifting over to the GPU and the shaders, the vertex shader is still surprisingly short and succinct. It achieves its effects by using a combination of the time, cosine functions, and its various position components to calculate the next position:
 
-#+BEGIN_SRC glsl
-  //imports
-  /* ... */
+  #+CAPTION: The rest of the vertex shader.
+  #+BEGIN_SRC glsl
+  /* imports */
 
-  float wrap (float min, float max, float n) {/*...*/}
+  float wrap (float min, float max, float n) {/*see above*/}
 
   void main() {
     vec3 pos = position;
     pos.x = wrap(minCoordinates.x, maxCoordinates.x,
-      pos.x + time * windX + cos(time + pos.z) * windX * radius);
+      pos.x + time * windX + cos(time + pos.x) * windX * radius);
     pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravity);
     pos.z = wrap(minCoordinates.z, maxCoordinates.z,
       pos.z + time * windZ + cos(time + pos.z) * windZ * radius);
@@ -77,7 +78,9 @@
     gl_PointSize = size * (scale / length(modelViewPosition.xyz));
     gl_Position = projectionMatrix * modelViewPosition;
   }
-#+END_SRC
+  #+END_SRC
+
+    To the X-component we add the ~windX~ value scaled by the current time plus an offset based on the cosine of the X-component scaled by ~time~ which is then scaled by the ~windX~ and the ~radius~ uniforms. The Y-component is simpler: simply add the gravity scaled by time. Finally, the Z-component is almost the same as the X-component, except it swaps all instances of the X-component for the Z-component.
 
 ** Source structure
 *** Parcel and the build structure
