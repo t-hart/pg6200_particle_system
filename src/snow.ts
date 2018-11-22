@@ -4,24 +4,15 @@ import * as vec from './vector3'
 import * as parameters from './parameters'
 import * as boundingBox from './boundingBox'
 
-import snow1 from 'assets/textures/sprites/snowflake1.png'
-import snow2 from 'assets/textures/sprites/snowflake2.png'
-import snow3 from 'assets/textures/sprites/snowflake3.png'
-import snow4 from 'assets/textures/sprites/snowflake4.png'
-import snow5 from 'assets/textures/sprites/snowflake5.png'
+import snowflake from 'assets/textures/sprites/snowflake2.png'
 
 import * as shader from './shaders/custom'
 
-const snowTexture = three.ImageUtils.loadTexture(snow2)
+const snowTexture = three.ImageUtils.loadTexture(snowflake)
 
 export interface t {
   points: three.Points,
   material: three.ShaderMaterial
-}
-
-const createPoints3D = (dimensions: vec.t) => (n: number) => {
-  const dimensionsAsArray = vec.asArray(dimensions)
-  return range({ n: n * 3 }).map(m => three.Math.randFloatSpread(dimensionsAsArray[m % 3]))
 }
 
 export const make = (bounds: boundingBox.t, params: parameters.t) => (n: number): t => {

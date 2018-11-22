@@ -140,7 +140,7 @@ export const init = (width: number, height: number) => (canvas: HTMLCanvasElemen
   initGUI(snowParticles.material, params)
 
   camera.position.z = bounds.max.z
-  camera.position.y = bounds.max.y / 2
+  // camera.position.y = bounds.max.y / 2
 
   const animate = (previous: number) => (now: number) => {
     snowParticles.points.material.uniforms.time.value = now * .001
