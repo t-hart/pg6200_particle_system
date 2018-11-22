@@ -82,6 +82,8 @@
 
     To the X-component we add the ~windX~ value scaled by the current time plus an offset based on the cosine of the X-component scaled by ~time~ which is then scaled by the ~windX~ and the ~radius~ uniforms. The Y-component is simpler: simply add the gravity scaled by time. Finally, the Z-component is almost the same as the X-component, except it swaps all instances of the X-component for the Z-component.
 
+    The oscillation in the X- and Z-components is present to provide the trajectory with a bit of a rocking motion, as snowflakes don't in a straight line. This is the replacement for the ~drag~ and ~baseVelocity~ parts of the ~snowflake~ interface in the original implementation, but done in a more memory-efficient manner. Part of the reason it works so well is that the oscillation is reliant upon the snowflake's current position, meaning that if two snowflakes were in the exact same position, they would fall perfectly in tandem, but because of how they're spread out, they're all impacted slightly differently by the oscillations, thus producing a seemingly random pattern.
+
 ** Source structure
 *** Parcel and the build structure
     The project is built using a JavaScript bundler called [[https://parceljs.org][Parcel]]. This allows for a quicker iteration cycle and also opens up the door to use specific variations of JavaScript which can then be transpiled to regular JavaScript for distribution.
