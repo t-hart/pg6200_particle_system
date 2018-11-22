@@ -4,6 +4,8 @@
    The end result is a particle system which, based on a number of user-configurable inputs, can serve as different types of snowfall.
    Please experiment with tweaking the parameters in the top right corner to see how that affects the effect. The default is a fairly mild snowfall, but can get pretty heavy with the right settings.
 
+   The model in the scene is included for reference purposes.
+
 ** Choice of motif
    While I had several ideas in the beginning, including rain and a sparkler effect, I ended up settling on snow, in part because of the availability of sprites from the Three.js website and in part because I had already started playing around with it and it proved to be an interesting and satisfying problem domain.
 
@@ -55,7 +57,7 @@
 
   This has the advantage over a naive modulo implementation that it also takes into consideration a potential offset that area might have.
 
-    After having moved all of the heavy lifting over to the GPU and the shaders, the vertex shader is still surprisingly short and succinct. It achieves its effects by using a combination of the time, cosine functions, and its various position components to calculate the next position.
+    After having moved all of the heavy lifting over to the GPU and the shaders, the vertex shader is still surprisingly short and succinct. It achieves its effects by using a combination of the time, cosine functions, and its various position components to calculate the next position:
 
 #+BEGIN_SRC glsl
   //imports
