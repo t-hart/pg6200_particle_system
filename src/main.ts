@@ -90,7 +90,7 @@ const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
   [
     ['size', 1, 200],
     ['scale', 1, 100],
-    ['gravityMultiplier', -50, 50],
+    ['gravity', -50, 50],
     ['windX', -50, 50],
     ['windZ', -50, 50],
     ['opacity', 0, 1],

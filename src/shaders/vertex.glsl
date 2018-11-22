@@ -1,7 +1,7 @@
 uniform float size;
 uniform float scale;
 uniform float time;
-uniform float gravityMultiplier;
+uniform float gravity;
 uniform float windX;
 uniform float windZ;
 uniform float radius;
@@ -18,7 +18,7 @@ float wrap (float min, float max, float n) {
 void main() {
   vec3 pos = position;
   pos.x = wrap(minCoordinates.x, maxCoordinates.x, pos.x + time * windX) + cos(time + pos.z) * windX * radius;
-  pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravityMultiplier);
+  pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravity);
   pos.z = wrap(minCoordinates.z, maxCoordinates.z, pos.z + time * windZ) + cos(time + pos.z) * windZ * radius;
 
   vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1);

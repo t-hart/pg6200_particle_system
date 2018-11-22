@@ -15,7 +15,7 @@ const initUniforms = (params: parameters.t, bounds: boundingBox.t, texture: thre
   texture: { type: 't', value: texture },
   windX: { type: 'f', value: params.windX },
   windZ: { type: 'f', value: params.windZ },
-  gravityMultiplier: { type: 'f', value: params.gravityMultiplier },
+  gravity: { type: 'f', value: params.gravity },
   maxCoordinates: { type: 'v3', value: vec.asThreeVector(bounds.max) },
   minCoordinates: { type: 'v3', value: vec.asThreeVector(bounds.min) }
 })
