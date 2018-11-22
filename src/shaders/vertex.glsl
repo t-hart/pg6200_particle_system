@@ -17,7 +17,7 @@ float wrap (float min, float max, float n) {
 
 void main() {
   vec3 pos = position;
-  pos.x = wrap(minCoordinates.x, maxCoordinates.x, pos.x + time * windX + cos(time + pos.z) * windX * radius);
+  pos.x = wrap(minCoordinates.x, maxCoordinates.x, pos.x + time * windX + cos(time + pos.x) * windX * radius);
   pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravity);
   pos.z = wrap(minCoordinates.z, maxCoordinates.z, pos.z + time * windZ + cos(time + pos.z) * windZ * radius);
 
