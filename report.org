@@ -3,6 +3,7 @@
    This report details the development and result of the Three.js particle system assignment.
    The end result is a particle system which, based on a number of user-configurable inputs, can serve as different types of snowfall.
    Please experiment with tweaking the parameters in the top right corner to see how that affects the effect. The default is a fairly mild snowfall, but can get pretty heavy with the right settings.
+   The number of particles should be suitable for the intended purpose, but might not be sufficient for a blizzard, for instance.
 
    The model in the scene is included for reference purposes.
 
@@ -69,10 +70,11 @@
   void main() {
     vec3 pos = position;
     pos.x = wrap(minCoordinates.x, maxCoordinates.x,
-      pos.x + time * windX + cos(time + pos.x) * windX * radius);
-    pos.y = wrap(minCoordinates.y, maxCoordinates.y, pos.y - time * gravity);
+      pos.x + time * windX + cos(time + pos.x) * horizontalRadius);
+    pos.y = wrap(minCoordinates.y, maxCoordinates.y,
+      pos.y - time * gravity + sin(time + pos.y) * verticalRadius);
     pos.z = wrap(minCoordinates.z, maxCoordinates.z,
-      pos.z + time * windZ + cos(time + pos.z) * windZ * radius);
+      pos.z + time * windZ + cos(time + pos.z) * horizontalRadius);
 
     vec4 modelViewPosition = modelViewMatrix * vec4(pos, 1);
     gl_PointSize = size * (scale / length(modelViewPosition.xyz));
@@ -80,9 +82,9 @@
   }
   #+END_SRC
 
-    To the X-component we add the ~windX~ value scaled by the current time plus an offset based on the cosine of the X-component scaled by ~time~ which is then scaled by the ~windX~ and the ~radius~ uniforms. The Y-component is simpler: simply add the gravity scaled by time. Finally, the Z-component is almost the same as the X-component, except it swaps all instances of the X-component for the Z-component.
+    To the X-component we add the ~windX~ value scaled by the current time plus an offset based on the cosine of the X-component added to ~time~ which is then scaled the ~horizontalRadius~ uniform. The Y-component is similar, but uses ~gravity~ instead of ~windX~ and a sine function rather than a cosine and is scaled by the ~verticalRadius~ uniform. Finally, the Z-component is almost the same as the X-component, except it swaps all instances of the X-component for the Z-component.
 
-    The oscillation in the X- and Z-components is present to provide the trajectory with a bit of a rocking motion, as snowflakes don't in a straight line. This is the replacement for the ~drag~ and ~baseVelocity~ parts of the ~snowflake~ interface in the original implementation, but done in a more memory-efficient manner. Part of the reason it works so well is that the oscillation is reliant upon the snowflake's current position, meaning that if two snowflakes were in the exact same position, they would fall perfectly in tandem, but because of how they're spread out, they're all impacted slightly differently by the oscillations, thus producing a seemingly random pattern.
+    The oscillation provided by the sine and cosine functions is present to provide the trajectory with a bit of a rocking motion, as snowflakes don't in a straight line. This is the replacement for the ~drag~ and ~baseVelocity~ parts of the ~snowflake~ interface in the original implementation, but done in a more memory-efficient manner. Part of the reason it works so well is that the oscillation is reliant upon the snowflake's current position, meaning that if two snowflakes were in the exact same position, they would fall perfectly in tandem, but because of how they're spread out, they're all impacted slightly differently by the oscillations, thus producing a seemingly random pattern.
 
 ** Source structure
 *** Parcel and the build structure
