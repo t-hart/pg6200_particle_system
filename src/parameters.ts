@@ -5,13 +5,15 @@ export interface t {
   windZ: number,
   color: number,
   opacity: number,
-  radius: number,
+  horizontalRadius: number,
+  verticalRadius: number,
   scale: number
 }
 
 export const defaultValue = (): t => ({
   color: 0xFFFFFF,
-  radius: .5,
+  horizontalRadius: 5,
+  verticalRadius: 5,
   size: 70,
   opacity: .5,
   gravity: 20,

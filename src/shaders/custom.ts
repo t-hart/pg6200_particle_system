@@ -8,7 +8,8 @@ import * as parameters from '../parameters'
 const initUniforms = (params: parameters.t, bounds: boundingBox.t, texture: three.Texture) => ({
   color: { type: 'c', value: new three.Color(params.color) },
   time: { type: 'f', value: 0 },
-  radius: { type: 'f', value: params.radius },
+  horizontalRadius: { type: 'f', value: params.horizontalRadius },
+  verticalRadius: { type: 'f', value: params.verticalRadius },
   size: { type: 'f', value: params.size },
   scale: { type: 'f', value: params.scale },
   opacity: { type: 'f', value: params.opacity },

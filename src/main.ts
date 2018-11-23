@@ -94,7 +94,8 @@ const initGUI = (material: three.ShaderMaterial, params: parameters.t) => {
     ['windX', -100, 100],
     ['windZ', -100, 100],
     ['opacity', 0, 1],
-    ['radius', 0, 2]
+    ['horizontalRadius', 0, 20],
+    ['verticalRadius', 0, 20]
   ].forEach(row => add(...row))
 
   controls.addColor(params, 'color').onChange(handleChange)
